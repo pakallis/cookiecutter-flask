@@ -2,19 +2,18 @@
 """User models."""
 import datetime as dt
 
+from mongoengine import Document
 from flask_login import UserMixin
 
-from {{cookiecutter.app_name}}.database import Column, Model, SurrogatePK, db, reference_col, relationship
+from {{cookiecutter.app_name}}.database import db
 from {{cookiecutter.app_name}}.extensions import bcrypt
 
 
-class Role(SurrogatePK, Model):
+class Role(Document):
     """A role for a user."""
 
-    __tablename__ = 'roles'
-    name = Column(db.String(80), unique=True, nullable=False)
-    user_id = reference_col('users', nullable=True)
-    user = relationship('User', backref='roles')
+    name = StringField(required=True, unique=True)
+    user_id = ReferenceField(User)
 
     def __init__(self, name, **kwargs):
         """Create instance."""
@@ -25,19 +24,18 @@ class Role(SurrogatePK, Model):
         return '<Role({name})>'.format(name=self.name)
 
 
-class User(UserMixin, SurrogatePK, Model):
+class User(Document):
     """A user of the app."""
-
-    __tablename__ = 'users'
-    username = Column(db.String(80), unique=True, nullable=False)
-    email = Column(db.String(80), unique=True, nullable=False)
+    username = StringField(unique=True, required=True)
+    email = StringField(unique=True, required=True)
     #: The hashed password
-    password = Column(db.Binary(128), nullable=True)
-    created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
-    first_name = Column(db.String(30), nullable=True)
-    last_name = Column(db.String(30), nullable=True)
-    active = Column(db.Boolean(), default=False)
-    is_admin = Column(db.Boolean(), default=False)
+    password = BinaryField(required=True)
+    created_at = DateTimeField(required=True, default=dt.datetime.utcnow)
+    first_name = StringField(db.String(30), required=True)
+    last_name = StringField(required=True)
+    active = BooleanField(default=False)
+    is_admin = BooleanField(default=False)
+    roles = ListField(ReferenceField(User))
 
     def __init__(self, username, email, password=None, **kwargs):
         """Create instance."""
